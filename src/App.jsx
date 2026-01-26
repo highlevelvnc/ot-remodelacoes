@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Phone, Mail, MessageSquare, MapPin, Star, CheckCircle, ArrowRight, Menu, X, Globe, Hammer, Home, Paintbrush, Award, Shield, Clock, Target, Zap, Heart, Sparkles, Image as ImageIcon, ExternalLink } from 'lucide-react';
+import { Phone, Mail, MessageSquare, MapPin, Star, CheckCircle, ArrowRight, Menu, X, Globe, Hammer, Home, Paintbrush, Award, Shield, Clock, Target, Zap, Heart, Sparkles, Image as ImageIcon, ExternalLink, Send } from 'lucide-react';
 
 const OTRemodelacoes = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -10,14 +10,66 @@ const OTRemodelacoes = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedImage, setSelectedImage] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+  const [formStatus, setFormStatus] = useState({ type: '', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const statsRef = useRef(null);
 
   useEffect(() => {
+    // Update document title and create favicon
+    const titles = {
+      en: 'OT Remodelações - Premium Home Renovations in Cascais, Portugal | Kitchen & Bathroom Remodeling',
+      pt: 'OT Remodelações - Remodelações Premium em Cascais, Portugal | Cozinhas e Casas de Banho'
+    };
+    document.title = titles[currentLang];
+
+    // Create favicon
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    
+    // Black background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, 64, 64);
+    
+    // Blue text "OT"
+    ctx.fillStyle = '#3B82F6';
+    ctx.font = 'bold 32px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('OT', 32, 32);
+    
+    // Set favicon
+    const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    link.type = 'image/x-icon';
+    link.rel = 'shortcut icon';
+    link.href = canvas.toDataURL();
+    document.getElementsByTagName('head')[0].appendChild(link);
+
+    // Meta tags for SEO
+    const metaDescription = currentLang === 'en' 
+      ? 'Professional home renovation services in Cascais, Portugal. Expert kitchen remodeling, bathroom renovations, interior design. Licensed contractors with 8+ years experience. Free quotes available.'
+      : 'Serviços profissionais de remodelação em Cascais, Portugal. Especialistas em cozinhas, casas de banho, design de interiores. Licenciados com 8+ anos de experiência. Orçamentos grátis.';
+    
+    let metaTag = document.querySelector('meta[name="description"]');
+    if (!metaTag) {
+      metaTag = document.createElement('meta');
+      metaTag.name = 'description';
+      document.head.appendChild(metaTag);
+    }
+    metaTag.content = metaDescription;
+
     // Google Fonts
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
+    const fontLink = document.createElement('link');
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap';
+    fontLink.rel = 'stylesheet';
+    document.head.appendChild(fontLink);
 
     // Meta Pixel
     !function(f,b,e,v,n,t,s)
@@ -51,10 +103,78 @@ const OTRemodelacoes = () => {
     }, 150);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [currentLang]);
 
   const scrollToContact = () => {
     document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setFormStatus({ type: '', message: '' });
+
+    try {
+      // Create mailto link with form data
+      const subject = encodeURIComponent(`New Quote Request from ${formData.name}`);
+      const body = encodeURIComponent(`
+Name: ${formData.name}
+Email: ${formData.email}
+Phone: ${formData.phone}
+
+Message:
+${formData.message}
+
+---
+This inquiry was submitted via OT Remodelações website.
+      `);
+      
+      // Open default email client
+      window.location.href = `mailto:info@otremodelacoes.pt?subject=${subject}&body=${body}`;
+
+      // Show success message
+      setFormStatus({
+        type: 'success',
+        message: currentLang === 'en' 
+          ? 'Thank you! Your email client should open shortly. We will contact you soon!' 
+          : 'Obrigado! O seu cliente de email deve abrir em breve. Entraremos em contacto em breve!'
+      });
+
+      // Track conversion
+      if (window.fbq) {
+        window.fbq('track', 'Lead');
+      }
+
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+      });
+
+      setTimeout(() => {
+        setFormStatus({ type: '', message: '' });
+      }, 5000);
+
+    } catch (error) {
+      setFormStatus({
+        type: 'error',
+        message: currentLang === 'en' 
+          ? 'Something went wrong. Please try calling us directly.' 
+          : 'Algo correu mal. Por favor ligue-nos directamente.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Portfolio data
@@ -246,7 +366,7 @@ const OTRemodelacoes = () => {
         emailPlaceholder: 'Email',
         phonePlaceholder: 'Phone',
         messagePlaceholder: 'Tell us about your project',
-        submit: 'Get Free Quote'
+        submit: 'Send Quote Request'
       },
       footer: {
         tagline: 'Premium renovations in Cascais, Portugal',
@@ -338,7 +458,7 @@ const OTRemodelacoes = () => {
         emailPlaceholder: 'Email',
         phonePlaceholder: 'Telefone',
         messagePlaceholder: 'Fale-nos sobre o seu projeto',
-        submit: 'Pedir Orçamento Grátis'
+        submit: 'Enviar Pedido de Orçamento'
       },
       footer: {
         tagline: 'Remodelações premium em Cascais, Portugal',
@@ -910,15 +1030,67 @@ const OTRemodelacoes = () => {
           </div>
 
           <div className="max-w-xl mx-auto bg-white rounded-xl p-8 shadow-2xl">
-            <div className="space-y-4">
-              <input type="text" placeholder={t.contact.namePlaceholder} className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-600 outline-none text-black transition-all duration-300" />
-              <input type="email" placeholder={t.contact.emailPlaceholder} className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-600 outline-none text-black transition-all duration-300" />
-              <input type="tel" placeholder={t.contact.phonePlaceholder} className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-600 outline-none text-black transition-all duration-300" />
-              <textarea placeholder={t.contact.messagePlaceholder} className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-600 outline-none text-black h-32 transition-all duration-300"></textarea>
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                {t.contact.submit}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input 
+                type="text" 
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder={t.contact.namePlaceholder} 
+                required
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-600 outline-none text-black transition-all duration-300" 
+              />
+              <input 
+                type="email" 
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder={t.contact.emailPlaceholder} 
+                required
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-600 outline-none text-black transition-all duration-300" 
+              />
+              <input 
+                type="tel" 
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder={t.contact.phonePlaceholder} 
+                required
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-600 outline-none text-black transition-all duration-300" 
+              />
+              <textarea 
+                name="message"
+                value={formData.message}
+                onChange={handleInputChange}
+                placeholder={t.contact.messagePlaceholder} 
+                required
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-600 outline-none text-black h-32 transition-all duration-300"
+              ></textarea>
+              
+              {formStatus.message && (
+                <div className={`p-4 rounded-lg ${formStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {formStatus.message}
+                </div>
+              )}
+
+              <button 
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    {currentLang === 'en' ? 'Sending...' : 'Enviando...'}
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    {t.contact.submit}
+                  </>
+                )}
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </section>
